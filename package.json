@@ -1,0 +1,28 @@
+{
+  "name": "grt-live-bus-info",
+  "version": "1.0.0",
+  "description": "A script to get bus info from Grand River Transit live and write it to a MongoDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leluso/grt-live-bus-info.git"
+  },
+  "keywords": [
+    "bus"
+  ],
+  "author": "Justin Barber <barber@outlook.com> (http://leluso.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/leluso/grt-live-bus-info/issues"
+  },
+  "homepage": "https://github.com/leluso/grt-live-bus-info#readme",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "gtfs-realtime-bindings": "0.0.4",
+    "mongoose": "^4.4.15",
+    "request": "^2.72.0"
+  }
+}
