@@ -1,6 +1,7 @@
 "use strict";
 
 let GtfsRealtimeBindings = require('gtfs-realtime-bindings');
+let async = require('async');
 let mongoose = require('mongoose');
 let program = require('commander');
 let request = require('request');
@@ -15,7 +16,7 @@ program.version('1.0.0')
         
 // Initialize MongoDB connection
 mongoose.connect(program.mongo);
-let Bus = mongoose.model('Bus', { id: String, route: String });
+let Bus = mongoose.model('Bus', { id: String, route: String, added: Date, tripStart: Date, tripId: String, status: String });
 
 let gtfsRequestOptions = {
     method: 'GET',
@@ -35,16 +36,44 @@ request(gtfsRequestOptions, (err, response, body) => {
         for(let b = 0; b < feed.entity.length; b++)
         {
             let bus = feed.entity[b];
-            storeBus(bus.id.replace(/\D/g, ''), bus.vehicle.trip.route_id.replace(/\D/g, ''))
+            let busId = bus.id.replace(/\D/g, '');
+            let routeId = bus.vehicle.trip.route_id;
+            console.log(busId + '\t', routeId + '\t', bus.vehicle.current_stop_sequence + '\t', bus.vehicle.current_status+'\t', bus.vehicle.trip.trip_id);
+            let tripStartDate = constructTripDate(bus.vehicle.trip.start_date, bus.vehicle.trip.start_time);
+            let tripId = bus.vehicle.trip.trip_id;
+            let status = bus.vehicle.current_status;
+            storeBus(busId, routeId, tripStartDate, tripId, status);
         }
     }
     
-    Bus.collection.insert(buses, quit);
+    async.each(buses, (bus, callback) => {
+        Bus.update({ tripStart: bus.tripStart, id: bus.id }, bus, { upsert: true }, callback)
+    }, quit);
 })
 
-function storeBus(busId, routeId)
+function storeBus(busId, routeId, tripStartDate, tripId, status)
 {
-    buses.push({id: busId, route: routeId, added: NOW })
+    buses.push({
+        id: busId,
+        route: routeId,
+        added: NOW,
+        tripStart: tripStartDate,
+        tripId: tripId,
+        status: status,
+    })
+}
+
+function constructTripDate(dateString, timeString) { // YYYYMMDD, HH:MM:SS
+    let year = +dateString.substring(0, 4);
+    let month = +dateString.substring(4, 6);
+    let day = +dateString.substring(6, 8);
+    
+    let timeSplit = timeString.split(':');
+    let hour = +timeSplit[0];
+    let minute = +timeSplit[1];
+    let seconds = +timeSplit[2];
+    
+    return new Date(year, month-1, day, hour, minute, seconds);
 }
 
 function quit(err)
